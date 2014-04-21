@@ -12,6 +12,7 @@ class MemAllocator
    bool init ();
    void* allocate (size_t size);
    void release (void* mem);
+   bool checkMemInteg (const void* mem);
 
  private:
    MemAllocator(){};

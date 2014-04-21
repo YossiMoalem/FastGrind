@@ -108,7 +108,7 @@ void* MemAllocator::allocate (size_t size)
 }
 
 /*********************************************************************************
- * Alocate a chunc of data, 
+ * Release a chunc of data, 
  * In check for corruption mode, also validate poison,
  * and set "delete" poison
  *********************************************************************************/
@@ -119,38 +119,58 @@ void MemAllocator::release (void* iMem)
 
    if (gCheckCorruption)
    {
-      //Check Front Poison
-      char* frontPoisonStart = (char*)iMem - (gPoisonSize);
-      int cmpVal = memcmp(frontPoisonStart, gBeforeAllocationPoison, gPoisonSize);
-      if (cmpVal != 0 )
-      { 
-         //Is this corruption or is it double free??
-         //Not 100% guarrenty, but lets give it a shot...
-         cmpVal = memcmp(frontPoisonStart, gBeforeFreedPoison, gPoisonSize);
-         if(cmpVal == 0)
-         {
-            fprintf (stderr, "double free!!!!: \n");
-         } else {
-            //TODO: write something more usefull....
-            fprintf (stderr, "Released Memory corrupted at start: \n");
-         }
-      } else {
-         //Check back poison
+      if (checkMemInteg(iMem))
+      {
+         //TODO: This can be done in the check() method, by passing extra param
+         //Everything is ok. set freed poison
+         char* frontPoisonStart = (char*)iMem - (gPoisonSize);
          size_t allocatedSize =  *((size_t*) frontPoisonStart - 1);
          char* endPoisonStart = (char*)iMem + allocatedSize;
-         cmpVal = memcmp (endPoisonStart, gAfterAllocationPoison, gPoisonSize);
-         if (cmpVal != 0 )
-         { 
-            //TODO: write something more usefull....
-            fprintf (stderr, "Released Memory corrupted at end: \n");
-         } else {
-            //Everything is ok. set freed poison
-            memcpy (frontPoisonStart, gBeforeFreedPoison, gPoisonSize);
-            memcpy (endPoisonStart, gAfterFreedPoison, gPoisonSize);
-            gOrigFreeFunc(frontPoisonStart - sizeof(size_t));
-         }
+
+         memcpy (frontPoisonStart, gBeforeFreedPoison, gPoisonSize);
+         memcpy (endPoisonStart, gAfterFreedPoison, gPoisonSize);
+         gOrigFreeFunc(frontPoisonStart - sizeof(size_t));
       }
-   } else { //Do not check for corruption
+   } else {
       gOrigFreeFunc(iMem);
    }
+}
+
+/*********************************************************************************
+ * Validate memory integrity by inspecting the poison
+ *********************************************************************************/
+bool MemAllocator::checkMemInteg (const void* iMem)
+{
+   //TODO: should we alwayd do this if??
+   assert (gCheckCorruption);
+   //Check Front Poison
+   char* frontPoisonStart = (char*)iMem - (gPoisonSize);
+   int cmpVal = memcmp(frontPoisonStart, gBeforeAllocationPoison, gPoisonSize);
+   if (cmpVal != 0 )
+   { 
+      //Is this corruption or is it double free??
+      //Not 100% guarrenty, but lets give it a shot...
+      cmpVal = memcmp(frontPoisonStart, gBeforeFreedPoison, gPoisonSize);
+      if(cmpVal == 0)
+      {
+         fprintf (stderr, "double free!!!!: \n");
+         return false;
+      } else {
+         //TODO: write something more usefull....
+         fprintf (stderr, "Released Memory corrupted at start: \n");
+         return false;
+      }
+   } else {
+      //Check back poison
+      size_t allocatedSize =  *((size_t*) frontPoisonStart - 1);
+      char* endPoisonStart = (char*)iMem + allocatedSize;
+      cmpVal = memcmp (endPoisonStart, gAfterAllocationPoison, gPoisonSize);
+      if (cmpVal != 0 )
+      { 
+         //TODO: write something more usefull....
+         fprintf (stderr, "Released Memory corrupted at end: \n");
+         return false;
+      } 
+   }
+   return true;
 }
