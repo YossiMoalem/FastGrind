@@ -16,8 +16,10 @@ class LeakChecker
    int getLogFD();
 
    private:
+   int mLogFD;
    static LeakChecker*      sInst;
    MemDB<AllocatedAddress>  mAllocatedMem;
+   void printError (DataElement<AllocatedAddress>::ReturnStatus iStatus);
 };
 
 

@@ -10,14 +10,14 @@ class MemAllocator
  public:
    static MemAllocator* instance ();
    bool init ();
-   void* allocate (size_t size);
-   void release (void* mem);
-   bool checkMemInteg (const void* mem);
+   void* allocate (size_t size) const ;
+   void release (void* mem) const ;
+   bool checkMemInteg (const void* mem) const ;
 
  private:
    MemAllocator(){};
    MemAllocator(const MemAllocator &iOhter );
-   MemAllocator& operator=(const MemAllocator& iOther);
+   MemAllocator& operator=(const MemAllocator& iOther) const ;
    static bool getOrigFunctions();
 
  private:
@@ -25,8 +25,8 @@ class MemAllocator
    static void (*gOrigFreeFunc)(void*) ;
    static MemAllocator* sInst;
 
-   bool gCheckCorruption;
-   size_t gPoisonSize;
+   bool mCheckCorruption;
+   size_t mPoisonSize;
 };
 
 #endif

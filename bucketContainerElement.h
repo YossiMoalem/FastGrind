@@ -23,16 +23,71 @@ enum FuncRec
    fArrNew       = 6,
 };
 
-
 template <typename KEY>
 struct DataElement
 {
+   enum ReturnStatus
+   {
+      eOk                  = 0,
+      eAllocationNotFound  = 1,
+      eUseRegDeleteForArr  = 2,
+      eUseArrDeleteForReg  = 3,
+      eAlreadyFree         = 4,
+      eAlreadyAllocated    = 5,
+      eUseDeleteforMalloc  = 6,
+      eUseFreeForNew       = 7,
+   };
+
+static const char* returnStatusToStr[] ;
    DataElement () : mData(fUnset)
    { }
 
-   void updateData(FuncRec iAllocatingFunc)
+   //TODO: convert this to state metrix
+   int updateData(FuncRec iAllocatingFunc)
    {
+      if (mData != fMalloc && mData != fRegNew && mData != fArrNew)
+      {
+         return eAlreadyFree;
+      }
+
+      //We should only get here for release...
+      if (iAllocatingFunc != fRegDel && iAllocatingFunc != fArrDel && iAllocatingFunc != fFree)
+      {
+         return eAlreadyAllocated;
+      }
+
+      //So far we established that we have the memory, and we want to release it. 
+      //Check if we are using correct release:
+
+      //mix Free and delete:
+      if (mData == fMalloc && iAllocatingFunc != fFree)
+      {
+         mData = iAllocatingFunc;
+         return eUseDeleteforMalloc;
+      }
+      if (mData != fMalloc && iAllocatingFunc == fFree)
+      {
+         mData = iAllocatingFunc;
+         return eUseFreeForNew;
+      }
+
+      //Use of delete[] instead of delete
+      if (mData == fRegNew && iAllocatingFunc != fRegDel)
+      {
+         assert (iAllocatingFunc == fArrDel);
+         mData = iAllocatingFunc;
+         return eUseArrDeleteForReg;
+      }
+      if (mData == fArrNew && iAllocatingFunc != fArrDel)
+      {
+         assert (iAllocatingFunc == fRegDel);
+         mData = iAllocatingFunc;
+         return eUseRegDeleteForArr;
+      }
+
+      //Think I covered all possible errors, no???
       mData = iAllocatingFunc;
+      return eOk;
    }
 
    bool isEmpty () const
@@ -61,11 +116,17 @@ struct DataElement
       }
    }
 
-   void set (const KEY& iKey, FuncRec iAllocatingFunc)
+   //It is possible that we are caled here to by release 
+   //(the allocation is already flushed)
+   //We can return error, to flush this imidiatly, but for now,
+   //lets carry on with regular flow. 
+   //This will be flushed in it's free time...
+   int set (const KEY& iKey, FuncRec iAllocatingFunc)
    {
       assert (isEmpty());
       mKey.set (iKey);
       mData = iAllocatingFunc;
+      return eOk;
    }
 
    unsigned int getData()
@@ -93,5 +154,14 @@ struct DataElement
    KEY mKey;
    FuncRec mData;
 };
+template <typename KEY>
+const char* DataElement<KEY>::returnStatusToStr[] = {"Ok", 
+                                                      "Cannot find allocation",
+                                                      "Use of regular delete, instead of delete[], to release array",
+                                                      "Use of delete[] to release non-array allocation",
+                                                      "Memory already freed!",
+                                                      "Memory already alocated",
+                                                      "Use of delete instead of free, to release memory allocated with maloc",
+                                                      "Use of free instead of delete, to release memory allocated with new"} ;
 
 #endif

@@ -82,7 +82,7 @@ void* malloc(size_t i_size)
     void* ptr = MemAllocator::instance()->allocate (i_size);
     if (NULL != ptr)
     {
-       LeakChecker::instance()->recordAllocation(fRegNew, ptr, i_size);
+       LeakChecker::instance()->recordAllocation(fMalloc, ptr, i_size);
     }
     return ptr;
 } 

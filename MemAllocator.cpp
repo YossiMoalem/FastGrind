@@ -69,8 +69,8 @@ bool MemAllocator::init ()
    assert (sizeof (gBeforeFreedPoison) == sizeof (gAfterFreedPoison));
    assert (sizeof (gBeforeAllocationPoison) ==sizeof (gBeforeFreedPoison));
 
-   gCheckCorruption = true;
-   gPoisonSize = sizeof(gBeforeAllocationPoison);
+   mCheckCorruption = false;
+   mPoisonSize = sizeof(gBeforeAllocationPoison);
    return true;
 }
 
@@ -85,22 +85,22 @@ bool MemAllocator::init ()
  *+------------+------------------+------------------+----------------+
  *********************************************************************************/
 
-void* MemAllocator::allocate (size_t size)
+void* MemAllocator::allocate (size_t size) const 
 {
    char* mem = 0;
-   if (gCheckCorruption)
+   if (mCheckCorruption)
    {
       //Allocate mem for the poison, and for the alocation length
-      size_t allocSize = size + ( 2 * gPoisonSize + sizeof (size_t)); 
+      size_t allocSize = size + ( 2 * mPoisonSize + sizeof (size_t)); 
       mem = (char*)gOrigMallocFunc (allocSize);
 
       *(size_t*)mem = size; 
       mem += sizeof (size_t);
       
-      memcpy (mem, gBeforeAllocationPoison, gPoisonSize);
-      mem += gPoisonSize;
+      memcpy (mem, gBeforeAllocationPoison, mPoisonSize);
+      mem += mPoisonSize;
       
-      memcpy (mem + size, gAfterAllocationPoison, gPoisonSize);
+      memcpy (mem + size, gAfterAllocationPoison, mPoisonSize);
    } else {
       mem = (char*)gOrigMallocFunc (size);
    }
@@ -112,23 +112,23 @@ void* MemAllocator::allocate (size_t size)
  * In check for corruption mode, also validate poison,
  * and set "delete" poison
  *********************************************************************************/
-void MemAllocator::release (void* iMem)
+void MemAllocator::release (void* iMem) const 
 {
    if (iMem == 0)
       return;
 
-   if (gCheckCorruption)
+   if (mCheckCorruption)
    {
       if (checkMemInteg(iMem))
       {
          //TODO: This can be done in the check() method, by passing extra param
          //Everything is ok. set freed poison
-         char* frontPoisonStart = (char*)iMem - (gPoisonSize);
+         char* frontPoisonStart = (char*)iMem - (mPoisonSize);
          size_t allocatedSize =  *((size_t*) frontPoisonStart - 1);
          char* endPoisonStart = (char*)iMem + allocatedSize;
 
-         memcpy (frontPoisonStart, gBeforeFreedPoison, gPoisonSize);
-         memcpy (endPoisonStart, gAfterFreedPoison, gPoisonSize);
+         memcpy (frontPoisonStart, gBeforeFreedPoison, mPoisonSize);
+         memcpy (endPoisonStart, gAfterFreedPoison, mPoisonSize);
          gOrigFreeFunc(frontPoisonStart - sizeof(size_t));
       }
    } else {
@@ -139,18 +139,18 @@ void MemAllocator::release (void* iMem)
 /*********************************************************************************
  * Validate memory integrity by inspecting the poison
  *********************************************************************************/
-bool MemAllocator::checkMemInteg (const void* iMem)
+bool MemAllocator::checkMemInteg (const void* iMem) const 
 {
    //TODO: should we alwayd do this if??
-   assert (gCheckCorruption);
+   assert (mCheckCorruption);
    //Check Front Poison
-   char* frontPoisonStart = (char*)iMem - (gPoisonSize);
-   int cmpVal = memcmp(frontPoisonStart, gBeforeAllocationPoison, gPoisonSize);
+   char* frontPoisonStart = (char*)iMem - (mPoisonSize);
+   int cmpVal = memcmp(frontPoisonStart, gBeforeAllocationPoison, mPoisonSize);
    if (cmpVal != 0 )
    { 
       //Is this corruption or is it double free??
       //Not 100% guarrenty, but lets give it a shot...
-      cmpVal = memcmp(frontPoisonStart, gBeforeFreedPoison, gPoisonSize);
+      cmpVal = memcmp(frontPoisonStart, gBeforeFreedPoison, mPoisonSize);
       if(cmpVal == 0)
       {
          fprintf (stderr, "double free!!!!: \n");
@@ -164,7 +164,7 @@ bool MemAllocator::checkMemInteg (const void* iMem)
       //Check back poison
       size_t allocatedSize =  *((size_t*) frontPoisonStart - 1);
       char* endPoisonStart = (char*)iMem + allocatedSize;
-      cmpVal = memcmp (endPoisonStart, gAfterAllocationPoison, gPoisonSize);
+      cmpVal = memcmp (endPoisonStart, gAfterAllocationPoison, mPoisonSize);
       if (cmpVal != 0 )
       { 
          //TODO: write something more usefull....

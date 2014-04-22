@@ -20,16 +20,34 @@ LeakChecker* LeakChecker::instance ()
 void LeakChecker::recordAllocation(FuncRec iFuncRec, const void* iAddr, size_t iSize)
 {
    assert (iFuncRec == fRegNew || iFuncRec == fArrNew || iFuncRec == fMalloc );
-   mAllocatedMem.set (AllocatedAddress(iAddr), iFuncRec);
+   DataElement<AllocatedAddress>::ReturnStatus retval = (DataElement<AllocatedAddress>::ReturnStatus) mAllocatedMem.set (AllocatedAddress(iAddr), iFuncRec);
+   if (retval != DataElement<AllocatedAddress>::eOk)
+   {
+      printError(retval);
+   }
 }
 void LeakChecker::recoredRemove (FuncRec iFuncRec, const void* iAddr)
 {
    assert (iFuncRec == fRegDel || iFuncRec == fArrDel || iFuncRec == fFree );
-   mAllocatedMem.set(iAddr, iFuncRec);
+   DataElement<AllocatedAddress>::ReturnStatus retval = (DataElement<AllocatedAddress>::ReturnStatus) mAllocatedMem.set(iAddr, iFuncRec);
+   if (retval != DataElement<AllocatedAddress>::eOk)
+   {
+      printError(retval);
+   }
 }
 
 
-LeakChecker::LeakChecker () : mAllocatedMem (getLogFD())
+void LeakChecker::printError (DataElement<AllocatedAddress>::ReturnStatus iStatus)
+{
+   //TODO: add stack trace!
+   const char* msg = DataElement<AllocatedAddress>::returnStatusToStr[iStatus];
+
+   char  buff[200];
+   int length = snprintf (buff, 200,  "%s : %s\n", "Stacktrace", msg);
+   write (mLogFD, buff, length);
+}
+LeakChecker::LeakChecker () : mLogFD(getLogFD()),
+                              mAllocatedMem (mLogFD)
 { }
 
 /********************************************************************************

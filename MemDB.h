@@ -56,16 +56,16 @@ class MemDB
     * Add one stack frame
     * Implements the logic described in the class comment
     ********************************************************************************/
-   void set(const KEY& iKey, FuncRec iFuncRec)
+   int set(const KEY& iKey, FuncRec iFuncRec)
    {
       unsigned int bucketIndex = KEY::hashToBucket(iKey);
       unsigned int index = getWritePosInBacket(bucketIndex, iKey);
 
       if ( m_data[bucketIndex][index].isEmpty())
       {
-         m_data[bucketIndex][index].set(iKey, iFuncRec); 
+         return m_data[bucketIndex][index].set(iKey, iFuncRec); 
       } else {
-         m_data[bucketIndex][index].updateData(iFuncRec);
+         return m_data[bucketIndex][index].updateData(iFuncRec);
       }
    }
 
@@ -76,6 +76,8 @@ class MemDB
     * the frame should bw written to (see the class description for details)
     * It will ALWAYS return an index to write to. If needed this index will be flushed
     * so we can overwrite it.
+    * TODO: think, maybe as param, if current(new) rank is lower than the minimal rank, not to flash
+    * and flyush the current one
     ********************************************************************************/
    unsigned int getWritePosInBacket (int bucketIndex, const KEY& iKey )// const
    {
