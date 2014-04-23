@@ -18,7 +18,7 @@ struct AllocatedAddress
      //Every 4 bits is represented by i char.
      //Then we nees to add 2 for the 0x
      static const int SizeOfAddressAsString = (sizeof(void*) * 8 / 4) + 2 ; 
-     static const size_t valLength = (SizeOfAddressAsString + sizeof(FRAME_DELEMETER)) * BACKTRACE_LENGTH;
+     static const size_t valLength = (SizeOfAddressAsString + 10 );
 
      AllocatedAddress () : mAllocatedAddress (0)
      { }
@@ -40,7 +40,7 @@ struct AllocatedAddress
       size_t toString(char oBuff[])
       {
          //assert (sizeof (oStack) >= valLength);
-         size_t length = snprintf (oBuff, valLength, "Address %p, Allocated at : %s", mAllocatedAddress, "Get stack from stackwalker") ;
+         size_t length = snprintf (oBuff, valLength, "Address %p:", mAllocatedAddress) ;
          
          assert (length < valLength);
          return length;

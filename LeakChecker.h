@@ -10,6 +10,7 @@ class LeakChecker
    static LeakChecker* instance ();
    void recordAllocation(FuncRec iFuncRec, const void* iAddr, size_t iSize);
    void recoredRemove(FuncRec iFuncRec, const void* iAddr);
+   ~LeakChecker();
 
    private:
    LeakChecker();

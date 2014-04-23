@@ -107,8 +107,8 @@ static const char* returnStatusToStr[] ;
          static size_t maxElementLength = KEY::valLength + sizeof (HIT_DELEMETER) + 10 /* int max size */ + 1;
          char elementStr[maxElementLength];
          size_t length = mKey.toString(elementStr);
-         length += snprintf (&elementStr[length], maxElementLength - length, "%s", HIT_DELEMETER);
-         length += snprintf (&elementStr[length], maxElementLength - length, "%d\n", mData);
+         length += snprintf (&elementStr[length], maxElementLength - length, "%s\n", HIT_DELEMETER);
+         //length += snprintf (&elementStr[length], maxElementLength - length, "%d\n", mData);
 
          write (iLogFD, elementStr, length);
 

@@ -17,6 +17,11 @@ LeakChecker* LeakChecker::instance ()
    return sInst;
 }
 
+LeakChecker::~LeakChecker()
+{
+   mAllocatedMem.flush();
+}
+
 void LeakChecker::recordAllocation(FuncRec iFuncRec, const void* iAddr, size_t iSize)
 {
    assert (iFuncRec == fRegNew || iFuncRec == fArrNew || iFuncRec == fMalloc );
@@ -75,3 +80,24 @@ int LeakChecker::getLogFD()
     return logFD;
 }
 
+
+/********************************************************************************
+ * The idea here is to create an static instance of this class
+ * so it will be distroyed when the app goes down, 
+ * and we can delete the singleton instance in order to call it's d'tor
+ ********************************************************************************/
+
+class LeakCheckerStarter
+{
+   public:
+   LeakCheckerStarter() : mLeakChecker(LeakChecker::instance())
+   {}
+   ~LeakCheckerStarter ()
+   {
+      delete mLeakChecker;
+   }
+   private: 
+   LeakChecker* mLeakChecker;
+};
+
+static LeakCheckerStarter mStarter;
