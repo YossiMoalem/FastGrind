@@ -109,8 +109,7 @@ int LeakChecker::getLogFD()
       }
       exit(1);
    }
-   // return logFD;
-   return 1;
+   return logFD
 }
 
 

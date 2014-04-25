@@ -44,8 +44,8 @@ class Stackwalker
       //Skip till the startingFrame
       while (curFrame 
             && curFrameIndex < startingFrame 
-            && (void *) curFrame > esp
-            &&  !((long) curFrame & 3))
+            && (void *) curFrame->nextFrame > esp
+            &&  !((long) curFrame->nextFrame & 3))
       {
          curFrame=curFrame->nextFrame;
          ++curFrameIndex;
@@ -56,8 +56,8 @@ class Stackwalker
       //Get the backtrace
       while (curFrame 
             && curFrameIndex < stackDeapth  
-            && (void *) curFrame > esp
-            &&  !((long) curFrame & 3))
+            && (void *) curFrame->nextFrame > esp
+            &&  !((long) curFrame->nextFrame & 3))
       {
          o_stackFrameAddr[curFrameIndex] =  curFrame->retAddr;
          curFrame=curFrame->nextFrame;
@@ -79,7 +79,7 @@ class Stackwalker
  * i_stackFrameAddr : array with size of at least stackDeapth, containing addresses to resolve
  * o_stackFrameName : Pre-allocated array, to which the resolved symbols will be written
  * ******************************************************************************/
-   static void myStackSymbols (int stackDeapth, stackFrameAddr i_stackFrameAddr[], stackFrameBuff o_stackFrameName[])
+   static void stackSymbols (int stackDeapth, stackFrameAddr i_stackFrameAddr[], stackFrameBuff o_stackFrameName[])
    {
       for (int i = 0; i < stackDeapth; ++i)
       {
@@ -107,7 +107,7 @@ class Stackwalker
          // We got info!
          snprintf (o_name, STACK_FRAME_BUF_SIZE, "%s", info.dli_sname);
       } else {
-         snprintf (o_name, STACK_FRAME_BUF_SIZE, "??" );
+         snprintf (o_name, STACK_FRAME_BUF_SIZE, "?? %p", i_addr );
       } 
       return 0;
    }
