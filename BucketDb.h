@@ -20,12 +20,18 @@
  *   This does not needs to be TS. We anly call it fron the signal handler, that sends
  *   one thread only...
  ********************************************************************************/
+
 template <typename KEY, typename DATA>
 class BucketDb
 {
    public:
    BucketDb (int iLogFD) : mLogFD(iLogFD)
    { }
+
+   ~BucketDb()
+   {
+      flush();
+   }
 
    /********************************************************************************
     * Flush all data (should only be called at the end) 
@@ -72,7 +78,7 @@ class BucketDb
    {
       unsigned int minRank = m_data[bucketIndex][0].getRank();
       unsigned int minConterIndex   = 0;
-      unsigned int emptyIndex = -1;
+      int emptyIndex = -1;
 
       for (unsigned int i = 0; i < ELEMENTS_IN_BUCKET; ++i)
       {
@@ -91,6 +97,7 @@ class BucketDb
       }
       if (emptyIndex >= 0)
       {
+
          return emptyIndex;
       }
       m_data[bucketIndex][minConterIndex].flush(mLogFD);

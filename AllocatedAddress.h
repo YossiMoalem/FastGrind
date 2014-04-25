@@ -2,6 +2,8 @@
 #define ALLOCATED_ADDRESS
 
 #include "stackwalker.h"
+#include "AllocationData.h"
+
 #define FRAME_DELEMETER ":"
 
 #ifndef BACKTRACE_LENGTH
@@ -11,6 +13,8 @@
 #define NUM_OF_INTERNAL_FRAMES 2
 
 typedef Stackwalker::stackFrameAddr RawStack[BACKTRACE_LENGTH] ;
+
+
 struct AllocatedAddress
 {
    public:
@@ -27,7 +31,7 @@ struct AllocatedAddress
      { }
 
 
-      void set (const void* iAllocatedAddr, FuncRec iAllocatigFunf)
+      void set (const void* iAllocatedAddr)
       {
          mAllocatedAddress = iAllocatedAddr;
       }
@@ -37,13 +41,13 @@ struct AllocatedAddress
          mAllocatedAddress = iAllocatedAddress.mAllocatedAddress;
       }
 
-      size_t toString(char oBuff[])
+      const char * toString()
       {
-         //assert (sizeof (oStack) >= valLength);
-         size_t length = snprintf (oBuff, valLength, "Address %p:", mAllocatedAddress) ;
+          static char buff [valLength];
+          size_t length = snprintf (buff, valLength, "Address %p:", mAllocatedAddress) ;
          
          assert (length < valLength);
-         return length;
+         return buff;
       }
 
       /********************************************************************************
