@@ -51,7 +51,7 @@ LeakChecker::LeakChecker () : mDoNotCollectTID ( -1 ),
                               mAllocatedMem(mLogFD)
 {
    pthread_mutex_init (&mDoNotCollectMutex, NULL);
-   pthreead_condition_init (&mDoNotCollectCond, NULL);
+   pthread_cond_init (&mDoNotCollectCond, NULL);
 }
 
 void LeakChecker::init ()

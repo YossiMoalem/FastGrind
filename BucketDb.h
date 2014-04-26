@@ -1,10 +1,9 @@
 #ifndef BUCKET_DB_H
 #define BUCKET_DB_H
 
-#include "BucketDataElement.h"
+#include "OneBucket.h"
 
 #define NUM_OF_BUCKETS      1024
-#define ELEMENTS_IN_BUCKET  4
 
 
 /********************************************************************************
@@ -40,73 +39,22 @@ class BucketDb
    {
       for (int i = 0; i < NUM_OF_BUCKETS; ++i)
       {
-         for (int ii = 0; ii < ELEMENTS_IN_BUCKET; ++ii)
-         {
-            m_data[i][ii].flush(mLogFD);
-         }
+            m_buckets[i].flush(mLogFD);
       }
    }
 
    /********************************************************************************
     * Add one element
-    * Implements the logic described in the class comment
+    * Find the bucket to which the elemet belog, and add the element to it
     ********************************************************************************/
    int set(const KEY& iKey, DATA iData)
    {
       unsigned int bucketIndex = KEY::hashToBucket(iKey);
-      unsigned int index = getWritePosInBacket(bucketIndex, iKey);
-
-      if ( m_data[bucketIndex][index].isEmpty())
-      {
-         return m_data[bucketIndex][index].set(iKey, iData); 
-      } else {
-         return m_data[bucketIndex][index].updateData(iData);
-      }
+      return m_buckets[bucketIndex].set (iKey, iData, mLogFD);
    }
 
    private:
-
-   /********************************************************************************
-    * This function is responsible of finding the place in the bucket where 
-    * the element should bw written to (see the class description for details)
-    * It will ALWAYS return an index to write to. If needed this index will be flushed
-    * so we can overwrite it.
-    * TODO: think, maybe as param, if current(new) rank is lower than the minimal rank, not to flash
-    * and flyush the current one
-    ********************************************************************************/
-   unsigned int getWritePosInBacket (int bucketIndex, const KEY& iKey )// const
-   {
-      unsigned int minRank = m_data[bucketIndex][0].getRank();
-      unsigned int minConterIndex   = 0;
-      int emptyIndex = -1;
-
-      for (unsigned int i = 0; i < ELEMENTS_IN_BUCKET; ++i)
-      {
-         if (m_data[bucketIndex][i].getKey() == iKey)
-         {
-            return i;
-         }
-         if (m_data[bucketIndex][i].isEmpty())
-         {
-            emptyIndex = i;
-         }
-         if (m_data[bucketIndex][i].getRank() < minRank)
-         {
-            minConterIndex = i;
-         }
-      }
-      if (emptyIndex >= 0)
-      {
-
-         return emptyIndex;
-      }
-      m_data[bucketIndex][minConterIndex].flush(mLogFD);
-      return minConterIndex;
-   }
-
-
-   private:
-   DataElement<KEY, DATA> m_data [NUM_OF_BUCKETS][ELEMENTS_IN_BUCKET];
+   OneBucket <KEY, DATA> m_buckets[NUM_OF_BUCKETS];
    int              mLogFD;
 
 };
