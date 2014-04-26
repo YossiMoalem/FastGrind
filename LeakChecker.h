@@ -9,6 +9,7 @@
 
 class LeakChecker 
 {
+   friend class StopCollecting;
    public:
    static LeakChecker* instance ();
    void recordAllocation(AllocationData::FuncRec iFuncRec, const void* iAddr, size_t iSize);
@@ -20,15 +21,18 @@ class LeakChecker
    int getLogFD();
    void printError (AllocationData::ReturnStatus iStatus);
    void init ();
-   void doNotCollect () { mDoNotCollectTID = pthread_self(); }
-   void resumeCollecting () { mDoNotCollectTID = -1; }
+   void setNotCollectTID (pthread_t iTID);
 
    private:
-   //This must be first, to stop infinit loop in ctor
-   pthread_t                                    mDoNotCollectTID;
+   int                                          mDoNotCollectTID;
    int                                          mLogFD;
    BucketDb<AllocatedAddress, AllocationData>   mAllocatedMem;
    static LeakChecker*                          sInst;
+   pthread_mutex_t                              mDoNotCollectMutex;
+   pthread_cond_t                               mDoNotCollectCond;
+
+
+
 };
 
 
